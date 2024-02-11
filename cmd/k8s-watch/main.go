@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"os"
 	"os/signal"
@@ -9,7 +10,7 @@ import (
 	"strings"
 	"syscall"
 
-	corev1 "k8s.io/api/core/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
@@ -18,6 +19,10 @@ import (
 )
 
 func main() {
+	namespace := flag.String("namespace", "", "Namespace")
+	labelSelector := flag.String("labelSelector", "", "LabelSelector")
+	flag.Parse()
+
 	// Find the kubeconfig file.
 	home := homedir.HomeDir()
 	kubeconfig := filepath.Join(home, ".kube", "config")
@@ -38,8 +43,8 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// Set up the watch for pods.
-	podWatcher, err := clientset.CoreV1().Pods("default").Watch(ctx, metav1.ListOptions{})
+	// Set up the watch for deployments.
+	dWatcher, err := clientset.AppsV1().Deployments(*namespace).Watch(ctx, metav1.ListOptions{LabelSelector: *labelSelector})
 	if err != nil {
 		panic(err.Error())
 	}
@@ -52,18 +57,19 @@ func main() {
 	go func() {
 		for {
 			select {
-			case event := <-podWatcher.ResultChan():
-				pod, ok := event.Object.(*corev1.Pod)
+			case event := <-dWatcher.ResultChan():
+				d, ok := event.Object.(*appsv1.Deployment)
 				if !ok {
-					fmt.Println("Cannot cast event object to type corev1.Pod")
+					fmt.Println("Cannot cast event object to type appsv1.Deployment")
 					continue
 				}
 				switch event.Type {
 				case watch.Added: //, watch.Modified:
-					image := pod.Spec.Containers[0].Image
-					fmt.Printf("Pod %s added with image version %s\n", pod.Name, strings.Split(image, ":")[1])
+					fmt.Printf("Deployment %s added.\n", d.Name)
+					image := d.Spec.Template.Spec.Containers[0].Image
+					fmt.Printf("Deployment %s added with image version %s\n", d.Name, strings.Split(image, ":")[1])
 				case watch.Deleted:
-					fmt.Printf("Pod %s deleted.\n", pod.Name)
+					fmt.Printf("Deployment %s deleted.\n", d.Name)
 				}
 			case <-interrupt:
 				// Stop the watch on interrupt.
