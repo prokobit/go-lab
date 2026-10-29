@@ -56,6 +56,9 @@ with `--delete`, are) removed, followed by `KEEP` lines: the newest images kept
 only because of `--keep-latest`. Images protected by `--protect` or too new for
 `--older-than-days` are not listed.
 
+On a terminal `DELETE` is printed in red and `KEEP` in green. Colors are off when
+the output is piped or redirected, or when `NO_COLOR` is set.
+
 ```
 DELETE	docker-local/team/app:feature-x	2025-11-02T10:15:00Z	3 downloads
 KEEP	docker-local/team/app:feature-y	2025-12-01T08:00:00Z	12 downloads

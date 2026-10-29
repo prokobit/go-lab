@@ -58,11 +58,12 @@ func run(args *cli) error {
 
 	olderThan := time.Duration(args.OlderThanDays) * 24 * time.Hour
 	selected, kept := Select(all, args.Image, args.Tag, args.Protect, args.KeepLatest, olderThan, time.Now())
+	color := useColor()
 	for _, img := range selected {
-		printImage("DELETE", args.Repo, img)
+		printImage("DELETE", args.Repo, img, color)
 	}
 	for _, img := range kept {
-		printImage("KEEP", args.Repo, img)
+		printImage("KEEP", args.Repo, img, color)
 	}
 	fmt.Printf("%d to delete, %d kept by --keep-latest, %d found\n", len(selected), len(kept), len(all))
 
@@ -81,6 +82,30 @@ func checkPattern(flag, pattern string) error {
 	return nil
 }
 
-func printImage(action, repo string, img Image) {
-	fmt.Printf("%s\t%s/%s:%s\t%s\t%d downloads\n", action, repo, img.Name, img.Tag, img.Created.Format(time.RFC3339), img.Downloads)
+func printImage(action, repo string, img Image, color bool) {
+	fmt.Printf("%s\t%s/%s:%s\t%s\t%d downloads\n", colorize(action, color), repo, img.Name, img.Tag, img.Created.Format(time.RFC3339), img.Downloads)
+}
+
+// colorize wraps DELETE in red and KEEP in green when color is enabled.
+func colorize(action string, color bool) string {
+	if !color {
+		return action
+	}
+	switch action {
+	case "DELETE":
+		return "\033[31m" + action + "\033[0m"
+	case "KEEP":
+		return "\033[32m" + action + "\033[0m"
+	}
+	return action
+}
+
+// useColor reports whether stdout is a terminal that should get colors.
+// NO_COLOR (https://no-color.org) and TERM=dumb disable them.
+func useColor() bool {
+	if _, ok := os.LookupEnv("NO_COLOR"); ok || os.Getenv("TERM") == "dumb" {
+		return false
+	}
+	fi, err := os.Stdout.Stat()
+	return err == nil && fi.Mode()&os.ModeCharDevice != 0
 }

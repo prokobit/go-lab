@@ -41,3 +41,22 @@ func TestCheckPattern(t *testing.T) {
 		}
 	}
 }
+
+func TestColorize(t *testing.T) {
+	tests := []struct {
+		action string
+		color  bool
+		want   string
+	}{
+		{"DELETE", true, "\033[31mDELETE\033[0m"},
+		{"KEEP", true, "\033[32mKEEP\033[0m"},
+		{"DELETE", false, "DELETE"},
+		{"KEEP", false, "KEEP"},
+		{"OTHER", true, "OTHER"},
+	}
+	for _, tt := range tests {
+		if got := colorize(tt.action, tt.color); got != tt.want {
+			t.Errorf("colorize(%q, %v) = %q, want %q", tt.action, tt.color, got, tt.want)
+		}
+	}
+}
