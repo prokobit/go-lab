@@ -1,6 +1,6 @@
 module github.com/prokobit/go-lab
 
-go 1.25
+go 1.27
 
 require (
 	github.com/alecthomas/kong v1.16.1
