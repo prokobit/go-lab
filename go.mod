@@ -3,7 +3,7 @@ module github.com/prokobit/go-lab
 go 1.27
 
 require (
-	github.com/alecthomas/kong v1.16.1
+	github.com/alecthomas/kong v1.17.0
 	github.com/jfrog/jfrog-client-go v1.55.0
 	github.com/labstack/echo-contrib v0.15.0
 	github.com/labstack/echo/v4 v4.11.4
